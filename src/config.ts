@@ -1,0 +1,1 @@
+export default {"APP_NAME":"MTDeviceMCP","APP_VERSION":"1.0.0","description":""}
