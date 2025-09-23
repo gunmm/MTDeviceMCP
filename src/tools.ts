@@ -4,6 +4,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import moment from 'moment';
 import { randomUUID } from "node:crypto";
+import axios from "axios";
+import * as cheerio from "cheerio";
+
 // OA 相关
 // 环境变量
 let mode = process.env.MILU_MCP_RUN_MODE ?? "stdio";
@@ -219,7 +222,7 @@ export class Tools {
                             const isAfternoonBooked = record.afternoon?.record_id && record.afternoon.record_id !== '';
                             const isNightBooked = record.night?.record_id && record.night.record_id !== '';
                             
-                            // 如果所有时段都被预约，则过滤掉该设备
+                            // 如果所有时段任意一个时段预约，则过滤掉该设备
                             return !(isMorningBooked || isAfternoonBooked || isNightBooked);
                         });
                         
@@ -260,9 +263,10 @@ export class Tools {
             "预约测试设备",
             {
                 deviceId: z.string().describe("要预约的设备ID"),
-                date: z.string().describe("预约日期，格式为 YYYY-MM-DD"),
+                date: z.string().describe("预约日期，格式为 YYYY-MM-DD，可以通过getCurrentTime方法获取"),
+                userId: z.string().describe("用户ID，可以通过getUserIdByName工具获取"),
             },
-            async ({ deviceId, date }) => {
+            async ({ deviceId, date, userId }) => {
                 // 验证日期格式
                 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                 if (!dateRegex.test(date)) {
@@ -280,7 +284,7 @@ export class Tools {
                     // 构建请求参数
                     const form = new URLSearchParams();
                     form.append("device_id", deviceId);
-                    form.append("user_id", "1226");
+                    form.append("user_id", userId);
                     form.append("on_rack", "0");
                     form.append("reason", "");
                     form.append("type", "");
