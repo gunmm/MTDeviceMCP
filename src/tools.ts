@@ -501,32 +501,43 @@ export class Tools {
             },
         );
 
-        // 简单缓存，避免每次请求都抓页面
-        let userMap: Map<string, string> | null = null;
+        let pageCache: {
+            userMap: Map<string, string>;
+            currentUser: {
+                id: string;
+                name: string;
+                email: string;
+            } | null;
+        } | null = null;
+
         let token: string = this.token;
 
-        // 从网页获取并解析
-        const loadUserMap = async (): Promise<Map<string, string>> => {
-            if (userMap) return userMap;
+        // 统一从页面获取并解析
+        const loadPageInfo = async () => {
+            if (pageCache) return pageCache;
 
-            if (token.length == 0) {
-                return new Map<string, string>(); // 返回空Map而不是直接返回content
+            if (token.length === 0) {
+                return {
+                    userMap: new Map<string, string>(),
+                    currentUser: null,
+                };
             }
 
             const res = await axios.get("http://device.order.meitu.com/index", {
                 headers: {
-                    "Cookie": `PHPSESSID=${token}`
+                    Cookie: `PHPSESSID=${token}`,
                 },
             });
 
-            const $ = cheerio.load(res.data);
-            const map = new Map<string, string>();
+            const html = res.data;
+            const $ = cheerio.load(html);
 
+            // 解析用户映射
+            const map = new Map<string, string>();
             $("el-option").each((_, el) => {
                 const label = $(el).attr("label") || "";
                 const value = $(el).attr("value") || "";
                 if (label && value) {
-                    // 提取名字 (label 里格式：部门-名字(email))
                     const match = label.match(/-([^-(]+)\(/);
                     if (match) {
                         const name = match[1].trim();
@@ -535,30 +546,41 @@ export class Tools {
                 }
             });
 
-            userMap = map;
-            return map;
-        }
+            // 解析当前用户信息
+            const userMatch = html.match(
+                /current_user_id:\s*"(\d+)",\s*current_user_name:\s*"([^"]+)",\s*current_user_email:\s*"([^"]+)"/
+            );
+
+            let currentUser = null;
+            if (userMatch) {
+                currentUser = {
+                    id: userMatch[1],
+                    name: userMatch[2],
+                    email: userMatch[3],
+                };
+            }
+
+            pageCache = {
+                userMap: map,
+                currentUser,
+            };
+
+            return pageCache;
+        };
 
         // 核心方法：通过名字拿用户ID
         const getUserIdByName = async (name: string): Promise<string | null> => {
-            const map = await loadUserMap();
-            // 打印 Map 的所有键值对
-            console.log("当前用户映射：");
-            for (const [k, v] of map.entries()) {
-                console.log(`${k} => ${v}`);
-            }
-
+            const { userMap } = await loadPageInfo();
             console.log("---***name", name);
-            console.log("---***get", map.get(name));
-
-            return map.get(name) || null;
-        }
-
+            console.log("---***get", userMap.get(name));
+            return userMap.get(name) || null;
+        };
+    
         this.server.tool(
             "getUserIdByName",
             "根据姓名获取用户ID",
             {
-                name: z.string().describe("要获取的ID的用户名"),
+                name: z.string().describe("要获取的ID的用户名，可以通过getCurrentUserName方法获取"),
             },
             async ({ name }) => {
                 console.log("---*** 451 name", name);
@@ -578,6 +600,67 @@ export class Tools {
                 return {
                     content: [{ type: "text", text: id ? `用户ID: ${id}` : "未找到用户" }],
                 };
+            }
+        );
+
+        // 新增方法：获取当前用户名
+        const getCurrentUserName = async (): Promise<string | null> => {
+            try {
+                const { currentUser } = await loadPageInfo();
+                return currentUser ? currentUser.name : null;
+            } catch (error) {
+                console.error("获取当前用户名失败:", error);
+                return null;
+            }
+        };
+
+        // 注册到 MCP 工具
+        this.server.tool(
+            "getCurrentUserName",
+            "获取当前登录用户名，用于辅助其他需要用户名参数的工具",
+            {
+                format: z.string().optional().describe("输出格式，支持 'name'（默认）或 'full'（完整格式：当前用户名: name）"),
+            },
+            async ({ format }) => {
+                if (this.token.length == 0) {
+                    return {
+                        content: [{ type: "text", text: "请先配置授权码" }],
+                        isError: true,
+                        message: "未配置授权码"
+                    };
+                }
+
+                try {
+                    const name = await getCurrentUserName();
+                    if (name) {
+                        // 根据format参数决定输出格式
+                        let outputText = name;
+                        if (format === 'full') {
+                            outputText = `当前用户名: ${name}`;
+                        }
+                        
+                        return {
+                            content: [{ type: "text", text: outputText }],
+                        };
+                    } else {
+                        return {
+                            content: [{ type: "text", text: "" }],
+                            isError: true,
+                            message: "未找到当前用户"
+                        };
+                    }
+                } catch (error) {
+                    console.error("获取当前用户名工具执行失败:", error);
+                    let errorMessage = "未知错误";
+                    if (error instanceof Error) {
+                        errorMessage = error.message;
+                    }
+                    return {
+                        content: [{ type: "text", text: "" }],
+                        isError: true,
+                        message: `获取当前用户名失败: ${errorMessage}`
+                    };
+                }
             }
         );
     }
