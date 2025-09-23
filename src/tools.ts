@@ -229,6 +229,28 @@ export class Tools {
                     }
 
                     const result = JSON.parse(responseText);
+                    
+                    // 过滤掉已被预约的设备
+                    if (result.data && Array.isArray(result.data)) {
+                        result.data = result.data.filter((device: any) => {
+                            // 检查设备是否已被预约
+                            // 如果record中的任意时段record_id不为空，则认为设备已被预约
+                            const record = device.record;
+                            if (!record) return true; // 如果没有record信息，则认为可预约
+                            
+                            // 检查早、中、晚三个时段是否都被预约
+                            const isMorningBooked = record.morning?.record_id && record.morning.record_id !== '';
+                            const isAfternoonBooked = record.afternoon?.record_id && record.afternoon.record_id !== '';
+                            const isNightBooked = record.night?.record_id && record.night.record_id !== '';
+                            
+                            // 如果所有时段都被预约，则过滤掉该设备
+                            return !(isMorningBooked || isAfternoonBooked || isNightBooked);
+                        });
+                        
+                        // 更新总数
+                        result.total = result.data.length;
+                    }
+                    
                     return {
                         content: [
                             {
