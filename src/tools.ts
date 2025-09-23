@@ -380,6 +380,93 @@ export class Tools {
             },
         );
 
+        // 添加取消预约设备的工具方法
+        this.server.tool(
+            "cancelReservation",
+            "取消已预约的设备",
+            {
+                recordId: z.string().describe("预约记录ID，可以从getAvailableTestDevices查询结果中获得，record字段下的morning、afternoon、night三个子字段中的record_id就是对应的预约记录ID"),
+                searchUserName: z.string().describe("搜索用户名，格式为'部门-姓名'，可以从getAvailableTestDevices查询结果中获得，对应record字段下的morning、afternoon、night三个子字段中的user_name字段"),
+            },
+            async ({ recordId, searchUserName }) => {
+                if (this.token.length == 0) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: "请先配置授权码",
+                            },
+                        ],
+                    };
+                }
+
+                try {
+                    // 构建请求参数
+                    const form = new URLSearchParams();
+                    form.append("record_id", recordId);
+                    form.append("search_user_name", searchUserName); // 直接中文
+
+                    console.log("---*** 取消预约设备 form", form.toString());
+
+                    // 发送取消预约请求
+                    const response = await fetch("http://device.order.meitu.com/api/device/return", {
+                        method: "POST",
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json, text/javascript, */*; q=0.01',
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'Cookie': `PHPSESSID=${this.token}`,
+                        },
+                        body: form.toString(),
+                    });
+
+                    const responseText = await response.text();
+                    
+                    // 检查响应是否为HTML错误页面
+                    if (responseText.startsWith('<!DOCTYPE')) {
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `取消预约失败: 服务器返回了错误页面，请检查请求参数或Cookie是否有效。请求参数: ${form.toString()}`,
+                                },
+                            ],
+                        };
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = JSON.parse(responseText);
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(result),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    console.error("取消预约失败:", error);
+                    let errorMessage = "未知错误";
+                    if (error instanceof Error) {
+                        errorMessage = error.message;
+                    } else if (typeof error === "string") {
+                        errorMessage = error;
+                    }
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: `取消预约失败: ${errorMessage}`,
+                            },
+                        ],
+                    };
+                }
+            },
+        );
+
         // 添加获取当前时间的工具方法
         this.server.tool(
             "getCurrentTime",
