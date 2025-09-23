@@ -180,7 +180,7 @@ export class Tools {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                            'Cookie': 'PHPSESSID=nl0d4v0ni7t6o0phb6pgj4e781',
+                            'Cookie': `PHPSESSID=${this.token}`,
                         },
                         body: params,
                     });
@@ -267,6 +267,18 @@ export class Tools {
                 userId: z.string().describe("用户ID，可以通过getUserIdByName工具获取"),
             },
             async ({ deviceId, date, userId }) => {
+
+                if (this.token.length == 0) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: "请先配置授权码",
+                            },
+                        ],
+                    };
+                }
+
                 // 验证日期格式
                 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
                 if (!dateRegex.test(date)) {
@@ -308,7 +320,7 @@ export class Tools {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json, text/javascript, */*; q=0.01',
                             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                            'Cookie': 'PHPSESSID=nl0d4v0ni7t6o0phb6pgj4e781',
+                            'Cookie': `PHPSESSID=${this.token}`,
                         },
                         body: form.toString(),
                     });
@@ -396,66 +408,82 @@ export class Tools {
 
         // 简单缓存，避免每次请求都抓页面
         let userMap: Map<string, string> | null = null;
+        let token: string = this.token;
 
         // 从网页获取并解析
-        async function loadUserMap(): Promise<Map<string, string>> {
-        if (userMap) return userMap;
+        const loadUserMap = async (): Promise<Map<string, string>> => {
+            if (userMap) return userMap;
 
-        const res = await axios.get("http://device.order.meitu.com/index", {
-            headers: {
-            "Cookie": "PHPSESSID=nl0d4v0ni7t6o0phb6pgj4e781"
-            },
-        });
-
-        const $ = cheerio.load(res.data);
-        const map = new Map<string, string>();
-
-        $("el-option").each((_, el) => {
-            const label = $(el).attr("label") || "";
-            const value = $(el).attr("value") || "";
-            if (label && value) {
-            // 提取名字 (label 里格式：部门-名字(email))
-            const match = label.match(/-([^-(]+)\(/);
-            if (match) {
-                const name = match[1].trim();
-                map.set(name, value);
+            if (token.length == 0) {
+                return new Map<string, string>(); // 返回空Map而不是直接返回content
             }
-            }
-        });
 
-        userMap = map;
-        return map;
+            const res = await axios.get("http://device.order.meitu.com/index", {
+                headers: {
+                    "Cookie": `PHPSESSID=${token}`
+                },
+            });
+
+            const $ = cheerio.load(res.data);
+            const map = new Map<string, string>();
+
+            $("el-option").each((_, el) => {
+                const label = $(el).attr("label") || "";
+                const value = $(el).attr("value") || "";
+                if (label && value) {
+                    // 提取名字 (label 里格式：部门-名字(email))
+                    const match = label.match(/-([^-(]+)\(/);
+                    if (match) {
+                        const name = match[1].trim();
+                        map.set(name, value);
+                    }
+                }
+            });
+
+            userMap = map;
+            return map;
         }
 
         // 核心方法：通过名字拿用户ID
-        async function getUserIdByName(name: string): Promise<string | null> {
-        const map = await loadUserMap();
-        // 打印 Map 的所有键值对
-        console.log("当前用户映射：");
-        for (const [k, v] of map.entries()) {
-            console.log(`${k} => ${v}`);
-        }
+        const getUserIdByName = async (name: string): Promise<string | null> => {
+            const map = await loadUserMap();
+            // 打印 Map 的所有键值对
+            console.log("当前用户映射：");
+            for (const [k, v] of map.entries()) {
+                console.log(`${k} => ${v}`);
+            }
 
-        console.log("---***name", name);
-        console.log("---***get", map.get(name));
+            console.log("---***name", name);
+            console.log("---***get", map.get(name));
 
-        return map.get(name) || null;
+            return map.get(name) || null;
         }
 
         this.server.tool(
-        "getUserIdByName",
-        "根据姓名获取用户ID",
-        {
-            name: z.string().describe("要获取的ID的用户名"),
-        },
-        async ({ name }) => {
-            console.log("---*** 451 name", name);
+            "getUserIdByName",
+            "根据姓名获取用户ID",
+            {
+                name: z.string().describe("要获取的ID的用户名"),
+            },
+            async ({ name }) => {
+                console.log("---*** 451 name", name);
 
-            const id = await getUserIdByName(name);
-            return {
-            content: [{ type: "text", text: id ? `用户ID: ${id}` : "未找到用户" }],
-            };
-        }
+                if (this.token.length == 0) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: "请先配置授权码",
+                            },
+                        ],
+                    };
+                }
+
+                const id = await getUserIdByName(name);
+                return {
+                    content: [{ type: "text", text: id ? `用户ID: ${id}` : "未找到用户" }],
+                };
+            }
         );
     }
 }
