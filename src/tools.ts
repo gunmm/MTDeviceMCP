@@ -50,26 +50,6 @@ export class Tools {
         }  
 
         this.server.tool(
-            "getCurrentTime",
-            "获取当前时间，如 2025-06-25T18:01:18+08:00",
-            {
-
-            },
-            async ({ }) => {
-                let txt = moment().format();
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: txt,
-                        },
-                    ],
-                    isError: false
-                };
-            },
-        );
-
-        this.server.tool(
             "getAvailableTestDevices",
             "查询指定日期、地区和平台的可预约测试设备列表。例如：查询北京地区iOS平台的可用设备，查询深圳地区安卓平台的可用设备等。",
             {
@@ -113,7 +93,6 @@ export class Tools {
                 
                 // 处理地区参数
                 if (area && area.trim() !== '') {
-                    console.log("---*** 527", area);
                     // 根据地区名称映射到对应的ID
                     const areaMap: {[key: string]: string} = {
                         '深圳9层': '6',
@@ -151,11 +130,9 @@ export class Tools {
                     const trimmedArea = area.trim();
                     if (areaMap[trimmedArea]) {
                         params.append('area', areaMap[trimmedArea]);
-                        console.log("---*** 540", areaMap[trimmedArea]);
 
                     } else {
                         // 检查是否包含这些关键词
-                         console.log("---*** 544", area);
 
                         if (trimmedArea.includes('深圳')) {
                             params.append('area', '6');
@@ -204,13 +181,12 @@ export class Tools {
                         },
                         body: params,
                     });
-                    console.log("请求设备列表 params", params.toString());
+                    console.log("---*** 请求设备列表 params", params.toString());
 
                     const contentType = response.headers.get("Content-Type");
-                    console.log("服务器返回类型:", contentType);
 
                     const responseText = await response.text();
-                    console.log("返回原始内容：", responseText);
+                    console.log("请求结束");
 
                     // 检查响应是否为HTML错误页面
                     if (responseText.startsWith('<!DOCTYPE')) {
@@ -318,7 +294,7 @@ export class Tools {
                     form.append(`night[use_date]`, date);
                     form.append(`night[return_date]`, date);
 
-                    console.log("预约机器 form", form.toString());
+                    console.log("---*** 预约机器 form", form.toString());
 
 
                     // 发送预约请求
@@ -377,6 +353,40 @@ export class Tools {
                         ],
                     };
                 }
+            },
+        );
+
+        // 添加获取当前时间的工具方法
+        this.server.tool(
+            "getCurrentTime",
+            "获取当前时间，格式为 YYYY-MM-DD HH:mm:ss，用于辅助其他需要时间参数的工具",
+            {
+                format: z.string().optional().describe("时间格式，支持 YYYY-MM-DD、YYYY-MM-DD HH:mm:ss 等，不传默认为 YYYY-MM-DD"),
+            },
+            async ({ format }) => {
+                // 如果没有指定格式，默认使用 YYYY-MM-DD
+                let timeFormat = format || 'YYYY-MM-DD HH:mm:ss';
+                
+                // 特殊处理一些常用格式
+                switch(timeFormat) {
+                    case 'date':
+                        timeFormat = 'YYYY-MM-DD';
+                        break;
+                    case 'datetime':
+                        timeFormat = 'YYYY-MM-DD HH:mm:ss';
+                        break;
+                }
+                
+                console.log("---*** getCurrentTime");
+                const currentTime = moment().format(timeFormat);
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: currentTime,
+                        },
+                    ],
+                };
             },
         );
     }
