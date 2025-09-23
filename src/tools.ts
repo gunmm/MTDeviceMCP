@@ -59,13 +59,14 @@ export class Tools {
                 date: z.string().describe("查询日期，格式为 YYYY-MM-DD，例如 2025-09-21"),
                 area: z.string().optional().describe("地区筛选条件，如'北京致真21层'、'PIX北京'等。不传则查询所有地区"),
                 platform: z.string().optional().describe("平台筛选条件，传入'安卓'、'iOS'。不传则查询所有平台"),
+                username: z.string().optional().describe("用户名，如果提供此参数，则查询该用户已预约的设备"),
                 // firm: z.string().optional().describe("厂商筛选条件，如'小米'、'华为'、'苹果'等。不传则查询所有厂商"),
                 // resolution: z.string().optional().describe("分辨率筛选条件。不传则不按分辨率筛选"),
                 // user_name: z.string().optional().describe("使用者姓名筛选条件。不传则不按使用者筛选"),
                 // system: z.string().optional().describe("系统版本筛选条件。不传则不按系统版本筛选"),
                 // device: z.string().optional().describe("设备型号筛选条件。不传则不按设备型号筛选"),
             },
-            async ({ date, area, platform }) => {
+            async ({ date, area, platform, username }) => {
                 if (this.token.length == 0) {
                     return {
                         content: [
@@ -169,9 +170,13 @@ export class Tools {
                     } else if (normalizedPlatform.toLowerCase() === 'android' || normalizedPlatform === '安卓') {
                         normalizedPlatform = '2';
                     }
-                    advanceForm.platform = normalizedPlatform;
+                    params.append('platform', normalizedPlatform);
                 }
                 
+                // 如果提供了username，则查询该用户已预约的设备
+                if (username) {
+                    params.append('user_name', username);
+                }
 
                 try {
                     // 发送请求获取测试设备列表
@@ -209,22 +214,25 @@ export class Tools {
 
                     const result = JSON.parse(responseText);
                     
-                    // 过滤掉已被预约的设备
+                    // 根据查询类型处理设备数据
                     if (result.data && Array.isArray(result.data)) {
-                        result.data = result.data.filter((device: any) => {
-                            // 检查设备是否已被预约
-                            // 如果record中的任意时段record_id不为空，则认为设备已被预约
-                            const record = device.record;
-                            if (!record) return true; // 如果没有record信息，则认为可预约
-                            
-                            // 检查早、中、晚三个时段是否都被预约
-                            const isMorningBooked = record.morning?.record_id && record.morning.record_id !== '';
-                            const isAfternoonBooked = record.afternoon?.record_id && record.afternoon.record_id !== '';
-                            const isNightBooked = record.night?.record_id && record.night.record_id !== '';
-                            
-                            // 如果所有时段任意一个时段预约，则过滤掉该设备
-                            return !(isMorningBooked || isAfternoonBooked || isNightBooked);
-                        });
+                        if (!username) {
+                            // 如果没有提供username，则过滤掉已被完全预约的设备
+                            result.data = result.data.filter((device: any) => {
+                                // 检查设备是否已被预约
+                                const record = device.record;
+                                if (!record) return true; // 如果没有record信息，则认为可预约
+                                
+                                // 检查早、中、晚三个时段是否都被预约
+                                const isMorningBooked = record.morning?.record_id && record.morning.record_id !== '';
+                                const isAfternoonBooked = record.afternoon?.record_id && record.afternoon.record_id !== '';
+                                const isNightBooked = record.night?.record_id && record.night.record_id !== '';
+                                
+                                // 如果所有时段都被预约，则过滤掉该设备
+                                return !(isMorningBooked && isAfternoonBooked && isNightBooked);
+                            });
+                        }
+                        // 如果提供了username，查询的是用户已预约设备，不过滤直接返回
                         
                         // 更新总数
                         result.total = result.data.length;
