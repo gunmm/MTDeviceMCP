@@ -389,5 +389,69 @@ export class Tools {
                 };
             },
         );
+
+        // 简单缓存，避免每次请求都抓页面
+        let userMap: Map<string, string> | null = null;
+
+        // 从网页获取并解析
+        async function loadUserMap(): Promise<Map<string, string>> {
+        if (userMap) return userMap;
+
+        const res = await axios.get("http://device.order.meitu.com/index", {
+            headers: {
+            "Cookie": "PHPSESSID=nl0d4v0ni7t6o0phb6pgj4e781"
+            },
+        });
+
+        const $ = cheerio.load(res.data);
+        const map = new Map<string, string>();
+
+        $("el-option").each((_, el) => {
+            const label = $(el).attr("label") || "";
+            const value = $(el).attr("value") || "";
+            if (label && value) {
+            // 提取名字 (label 里格式：部门-名字(email))
+            const match = label.match(/-([^-(]+)\(/);
+            if (match) {
+                const name = match[1].trim();
+                map.set(name, value);
+            }
+            }
+        });
+
+        userMap = map;
+        return map;
+        }
+
+        // 核心方法：通过名字拿用户ID
+        async function getUserIdByName(name: string): Promise<string | null> {
+        const map = await loadUserMap();
+        // 打印 Map 的所有键值对
+        console.log("当前用户映射：");
+        for (const [k, v] of map.entries()) {
+            console.log(`${k} => ${v}`);
+        }
+
+        console.log("---***name", name);
+        console.log("---***get", map.get(name));
+
+        return map.get(name) || null;
+        }
+
+        this.server.tool(
+        "getUserIdByName",
+        "根据姓名获取用户ID",
+        {
+            name: z.string().describe("要获取的ID的用户名"),
+        },
+        async ({ name }) => {
+            console.log("---*** 451 name", name);
+
+            const id = await getUserIdByName(name);
+            return {
+            content: [{ type: "text", text: id ? `用户ID: ${id}` : "未找到用户" }],
+            };
+        }
+        );
     }
 }
