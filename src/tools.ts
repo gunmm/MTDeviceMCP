@@ -318,18 +318,24 @@ export class Tools {
                 if (areaMap[trimmedArea]) {
                     params.append('area', areaMap[trimmedArea]);
                 } else {
-                    // 检查是否包含这些关键词
-                    if (trimmedArea.includes('深圳')) {
-                        params.append('area', '6');
-                    } else if (trimmedArea.includes('北京')) {
-                        params.append('area', '7');
-                    } else if (trimmedArea.includes('18层')) {
-                        params.append('area', '22');
-                    } else if (trimmedArea.includes('15层')) {
-                        params.append('area', '23');
+                     // 处理包含多个地区的查询
+                    if (trimmedArea.includes('北京')) {
+                        // 北京相关地区
+                        const beijingAreas = ['7', '43', '44', '41']; // 北京致真21层、北京商业化机架、北京致真大厦、PIX北京
+                        params.append('area', beijingAreas.join(','));
+                    } else if (trimmedArea.includes('厦门')) {
+                        // 厦门相关地区（根据映射表中可能的地区）
+                        const xiamenAreas = ['22', '23']; 
+                        params.append('area', xiamenAreas.join(','));
+                    } else if (trimmedArea.includes('深圳')) {
+                        // 深圳相关地区
+                        const shenzhenAreas = ['6', '40', '52']; // 深圳9层、PIX深圳、深圳25层
+                        params.append('area', shenzhenAreas.join(','));
+                    } else if (areaMap[trimmedArea]) {
+                        params.append('area', areaMap[trimmedArea]);
                     } else {
-                        // 如果没有映射关系，直接使用原始值
-                        params.append('area', trimmedArea);
+                            // 如果没有映射关系，直接使用原始值
+                            params.append('area', trimmedArea);
                     }
                 }
             }
