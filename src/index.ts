@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -50,9 +52,9 @@ function setupServer(cookie: string, token: string): McpServer {
 
 async function startStdioServer() {
     // 配置工具
-    let cookie = process.env.MTAK ?? "";
+    let token = process.env.MTAK ?? "";
     const transport = new StdioServerTransport();
-    await setupServer(cookie, "").connect(transport);
+    await setupServer("", token).connect(transport);
     console.log(`MTDeviceMCP MCP Server running on stdio appVer=${config.APP_VERSION}`);
 }
 
