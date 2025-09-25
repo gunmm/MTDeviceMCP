@@ -1,18 +1,25 @@
 {
-  "name": "mtdevicemcp",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@meitu/mtdevice",
+  "version": "1.0.3",
+  "description": "Meitu Device MCP server",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && chmod 755 build/index.js",
     "serve": "export MILU_MCP_RUN_MODE=sse && node ./build/index.js",
+    "serve-stdio": "node ./build/index.js",
     "pub": "npm run build && npm publish"
+  },
+   "bin": {
+    "mtdevice": "./build/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "publishConfig": {
+    "registry": "http://npm.meitu-int.com"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.1",
     "axios": "^1.12.2",
