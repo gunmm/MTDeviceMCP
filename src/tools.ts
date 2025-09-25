@@ -398,7 +398,7 @@ export class Tools {
         // 获取用户已预约设备列表
         this.server.tool(
             "getUserReservedDevices",
-            "获取指定用户已预约的设备列表。当用户询问自己预约了哪些设备时使用此工具。必须提供用户名参数。如果要依赖其他方法获取参数，需要逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
+            "获取指定用户已预约的设备列表。当用户询问自己预约了哪些设备时使用此工具。必须提供用户名参数。如果要依赖其他方法获取参数，必须逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
             {
                 date: z.string().describe("查询日期，格式为 YYYY-MM-DD，例如 2025-09-21，可以通过getCurrentTime方法获取"),
                 username: z.string().describe("用户名，需要查询该用户已预约的设备，可以通过getCurrentUserName方法获取"),
@@ -472,7 +472,7 @@ export class Tools {
         // 获取可预约设备列表（过滤掉已完全预约的设备）
         this.server.tool(
             "getAvailableDevices",
-            "获取指定日期可预约的测试设备列表。此工具会过滤掉已被完全预约的设备，只返回还有空闲时段的设备。当用户想要预约设备时使用此工具。如果要依赖其他方法获取参数，需要逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
+            "获取指定日期可预约的测试设备列表。此工具会过滤掉已被完全预约的设备，只返回还有空闲时段的设备。当用户想要预约设备时使用此工具。如果要依赖其他方法获取参数，必须逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
             {
                 date: z.string().describe("查询日期，格式为 YYYY-MM-DD，例如 2025-09-21，可以通过getCurrentTime方法获取"),
                 area: z.string().optional().describe("地区筛选条件，如'北京致真21层'、'PIX北京'等。不传则查询所有地区"),
@@ -544,7 +544,7 @@ export class Tools {
         // 获取所有设备列表（不过滤）
         this.server.tool(
             "getAllDevices",
-            "获取指定日期的所有测试设备列表，包括已被预约和可预约的设备。此工具不过滤任何设备，返回完整的设备列表。如果要依赖其他方法获取参数，需要逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
+            "获取指定日期的所有测试设备列表，包括已被预约和可预约的设备。此工具不过滤任何设备，返回完整的设备列表。如果要依赖其他方法获取参数，必须逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
             {
                 date: z.string().describe("查询日期，格式为 YYYY-MM-DD，例如 2025-09-21，可以通过getCurrentTime方法获取"),
                 area: z.string().optional().describe("地区筛选条件，如'北京致真21层'、'PIX北京'等。不传则查询所有地区"),
@@ -601,7 +601,7 @@ export class Tools {
 
         this.server.tool(
             "reserveTestDevice",
-            "预约测试设备。这个方法一次只能预约一个设备，如果要预约多个设备，请多次调用这个方法。如果要依赖其他方法获取参数，需要逐步执行。",
+            "预约测试设备。这个方法一次只能预约一个设备，如果要预约多个设备，必须多次调用这个方法。如果要依赖其他方法获取参数，必须逐步执行。",
             {
                 deviceId: z.string().describe("要预约的设备ID"),
                 date: z.string().describe("预约日期，格式为 YYYY-MM-DD，可以通过getCurrentTime方法获取"),
@@ -716,7 +716,7 @@ export class Tools {
         // 添加取消预约设备的工具方法
         this.server.tool(
             "cancelReservation",
-            "取消已预约的设备。当用户需要取消设备预约时使用此工具。注意：此方法需要针对上午、下午和晚上三个时段分别执行一次，每个时段需要单独调用一次该方法。通常需要先调用getAvailableTestDevices工具并传入username参数来获取设备预约信息，然后从返回结果中提取recordId和searchUserName参数。此工具的调用是完成取消预约任务的必要步骤，不能省略。如果要依赖其他方法获取参数，需要逐步执行。",
+            "取消已预约的设备。当用户需要取消设备预约时使用此工具。此方法必须针对上午、下午和晚上三个时段分别执行一次，每个时段必须单独调用一次该方法。通常需要先调用getAvailableTestDevices工具并传入username参数来获取设备预约信息，然后从返回结果中提取recordId和searchUserName参数。此工具的调用是完成取消预约任务的必要步骤，不能省略。如果要依赖其他方法获取参数，必须逐步执行。",
             {
                 recordId: z.string().describe("预约记录ID，可以从getAvailableTestDevices查询结果中获得，record字段下的morning、afternoon、night三个子字段中的record_id就是对应的预约记录ID。需要分别获取每个时段的record_id进行取消操作"),
                 searchUserName: z.string().describe("搜索用户名，格式为'部门-姓名'，可以从getAvailableTestDevices查询结果中获得，对应record字段下的morning、afternoon、night三个子字段中的user_name字段。注意这个参数不是简单的用户名，而是包含部门信息的完整用户名"),
@@ -802,7 +802,7 @@ export class Tools {
         // 添加获取当前时间的工具方法
         this.server.tool(
             "getCurrentTime",
-            "获取当前时间，格式为 YYYY-MM-DD HH:mm:ss，用于辅助其他需要时间参数的工具。获取时间后，必须继续执行后续操作，例如查询预约信息等。获取时间本身不是最终目标，而是为了完成更复杂的任务。如果要依赖其他方法获取参数，需要逐步执行。这个方法拿到结果后需要先处理才能继续执行其他方法。",
+            "获取当前时间，格式为 YYYY-MM-DD HH:mm:ss，用于辅助其他需要时间参数的工具。获取时间后，必须继续执行后续操作，例如查询预约信息等。获取时间本身不是最终目标，而是为了完成更复杂的任务。如果要依赖其他方法获取参数，必须逐步执行。这个方法拿到结果后需要先处理才能继续执行其他方法。该方法和getCurrentUserName方法必须分两步执行",
             {
                 format: z.string().optional().describe("时间格式，支持 YYYY-MM-DD、YYYY-MM-DD HH:mm:ss 等，不传默认为 YYYY-MM-DD"),
             },
@@ -910,7 +910,7 @@ export class Tools {
     
         this.server.tool(
             "getUserIdByName",
-            "根据姓名获取用户ID。获取用户ID后，通常需要根据用户ID查询相关数据，如查询预约信息等，需要传递给后续方法。如果要依赖其他方法获取参数，需要逐步执行。",
+            "根据姓名获取用户ID。获取用户ID后，通常需要根据用户ID查询相关数据，如查询预约信息等，需要传递给后续方法。如果要依赖其他方法获取参数，必须逐步执行。",
             {
                 name: z.string().describe("要获取的ID的用户名，可以通过getCurrentUserName方法获取"),
             },
@@ -949,7 +949,7 @@ export class Tools {
         // 注册到 MCP 工具
         this.server.tool(
             "getCurrentUserName",
-            "获取当前登录用户名，这是一个辅助工具，主要用于为其他需要用户名参数的工具提供用户名信息。获取用户名后，必须继续执行后续操作，例如查询该用户的预约信息等。获取用户名本身不是最终目标，而是为了完成更复杂的任务。如果要依赖其他方法获取参数，需要逐步执行。这个方法拿到结果后需要先处理才能继续执行其他方法。",
+            "获取当前登录用户名，这是一个辅助工具，主要用于为其他需要用户名参数的工具提供用户名信息。获取用户名后，必须继续执行后续操作，例如查询该用户的预约信息等。获取用户名本身不是最终目标，而是为了完成更复杂的任务。如果要依赖其他方法获取参数，必须逐步执行。这个方法拿到结果后需要先处理才能继续执行其他方法。该方法和getCurrentTime方法必须两步执行",
             {
                 format: z.string().optional().describe("输出格式，支持 'name'（默认）或 'full'（完整格式：当前用户名: name）"),
             },
