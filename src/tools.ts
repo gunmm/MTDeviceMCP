@@ -398,7 +398,7 @@ export class Tools {
         // 获取用户已预约设备列表
         this.server.tool(
             "getUserReservedDevices",
-            "获取指定用户已预约的设备列表。当用户询问自己预约了哪些设备时使用此工具。必须提供用户名参数。如果要依赖其他方法获取参数，必须逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。",
+            "获取指定用户已预约的设备列表。当用户询问自己预约了哪些设备时使用此工具。必须提供用户名参数。如果要依赖其他方法获取参数，必须逐步执行。此工具的调用是完成查询任务的必要步骤，不能省略。该方法返回的结果字段中record代表可以预约，cancle代表可以取消预约。",
             {
                 date: z.string().describe("查询日期，格式为 YYYY-MM-DD，例如 2025-09-21，可以通过getCurrentTime方法获取"),
                 username: z.string().describe("用户名，需要查询该用户已预约的设备，可以通过getCurrentUserName方法获取"),
@@ -716,10 +716,10 @@ export class Tools {
         // 添加取消预约设备的工具方法
         this.server.tool(
             "cancelReservation",
-            "取消已预约的设备。当用户需要取消设备预约时使用此工具。此方法必须针对上午、下午和晚上三个时段分别执行一次，每个时段必须单独调用一次该方法。通常需要先调用getAvailableTestDevices工具并传入username参数来获取设备预约信息，然后从返回结果中提取recordId和searchUserName参数。此工具的调用是完成取消预约任务的必要步骤，不能省略。时间和用户名不可以一起获取，必须一步一步获取。如果要依赖其他方法获取参数，必须逐步执行。",
+            "取消已预约的设备。当用户需要取消设备预约时使用此工具。此方法必须针对上午、下午和晚上三个时段分别执行一次，每个时段必须单独调用一次该方法。通常需要先调用getUserReservedDevices工具并传入username参数来获取设备预约信息，然后从返回结果中提取recordId和searchUserName参数。此工具的调用是完成取消预约任务的必要步骤，不能省略。时间和用户名不可以一起获取，必须一步一步获取。如果要依赖其他方法获取参数，必须逐步执行。",
             {
-                recordId: z.string().describe("预约记录ID，可以从getAvailableTestDevices查询结果中获得，record字段下的morning、afternoon、night三个子字段中的record_id就是对应的预约记录ID。需要分别获取每个时段的record_id进行取消操作"),
-                searchUserName: z.string().describe("搜索用户名，格式为'部门-姓名'，可以从getAvailableTestDevices查询结果中获得，对应record字段下的morning、afternoon、night三个子字段中的user_name字段。注意这个参数不是简单的用户名，而是包含部门信息的完整用户名"),
+                recordId: z.string().describe("预约记录ID，可以从getUserReservedDevices查询结果中获得，record字段下的morning、afternoon、night三个子字段中的record_id就是对应的预约记录ID。需要分别获取每个时段的record_id进行取消操作"),
+                searchUserName: z.string().describe("搜索用户名，格式为'部门-姓名'，可以从getUserReservedDevices查询结果中获得，对应record字段下的morning、afternoon、night三个子字段中的user_name字段。注意这个参数不是简单的用户名，而是包含部门信息的完整用户名"),
             },
             async ({ recordId, searchUserName }) => {
                 if (this.token.length == 0) {
