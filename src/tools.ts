@@ -642,14 +642,57 @@ export class Tools {
                     form.append("reason", "");
                     form.append("type", "");
 
+                    // 获取当前时间以决定预约哪些时间段
+                    const currentHour = moment().hour();
+                    const currentDate = moment().format('YYYY-MM-DD');
                     
-                     // 默认预约上午和下午
-                    form.append(`morning[use_date]`, date);
-                    form.append(`morning[return_date]`, date);
-                    form.append(`afternoon[use_date]`, date);
-                    form.append(`afternoon[return_date]`, date);
-                    form.append(`night[use_date]`, date);
-                    form.append(`night[return_date]`, date);
+                    // 只有当预约日期等于或晚于当前日期时才进行预约判断
+                    const isSameDay = date === currentDate;
+                    
+                    // 如果是同一天，根据当前时间决定预约哪些时段
+                    if (isSameDay) {
+                        // 上午时段（0-12点）可以预约上午、下午、晚上
+                        if (currentHour < 9) {
+                            form.append(`morning[use_date]`, date);
+                            form.append(`morning[return_date]`, date);
+                        }
+                        
+                        // 下午时段（0-18点）可以预约下午、晚上
+                        if (currentHour < 12) {
+                            form.append(`afternoon[use_date]`, date);
+                            form.append(`afternoon[return_date]`, date);
+                        }
+                        
+                        // 晚上时段（全天）可以预约晚上
+                        if (currentHour < 18) {
+                            form.append(`night[use_date]`, date);
+                            form.append(`night[return_date]`, date);
+                        }
+                        
+                    } else if (moment(date).isAfter(currentDate)) {
+                        // 如果预约日期在将来，预约所有时段
+                        form.append(`morning[use_date]`, date);
+                        form.append(`morning[return_date]`, date);
+                        form.append(`afternoon[use_date]`, date);
+                        form.append(`afternoon[return_date]`, date);
+                        form.append(`night[use_date]`, date);
+                        form.append(`night[return_date]`, date);
+                    } else {
+                        // 如果预约日期已过，不预约任何时段
+                        // 返回错误信息
+                        return {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: JSON.stringify({
+                                        status: "error",
+                                        code: 1,
+                                        msg: "不能对过去的时间进行预约"
+                                    }),
+                                },
+                            ],
+                        };
+                    }
 
                     console.log("---*** 预约机器 form", form.toString());
 
