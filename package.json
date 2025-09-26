@@ -1,6 +1,6 @@
 {
   "name": "@meitu/mtdevice",
-  "version": "1.0.11",
+  "version": "1.0.14",
   "description": "Meitu Device MCP server",
   "main": "index.js",
   "scripts": {
