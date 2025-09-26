@@ -669,7 +669,7 @@ export class Tools {
                             form.append(`night[return_date]`, date);
                         }
                         
-                    } else if (moment(date).isAfter(currentDate)) {
+                    } else {
                         // 如果预约日期在将来，预约所有时段
                         form.append(`morning[use_date]`, date);
                         form.append(`morning[return_date]`, date);
@@ -677,21 +677,6 @@ export class Tools {
                         form.append(`afternoon[return_date]`, date);
                         form.append(`night[use_date]`, date);
                         form.append(`night[return_date]`, date);
-                    } else {
-                        // 如果预约日期已过，不预约任何时段
-                        // 返回错误信息
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: JSON.stringify({
-                                        status: "error",
-                                        code: 1,
-                                        msg: "不能对过去的时间进行预约"
-                                    }),
-                                },
-                            ],
-                        };
                     }
 
                     console.log("---*** 预约机器 form", form.toString());
