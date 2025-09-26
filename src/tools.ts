@@ -325,7 +325,7 @@ export class Tools {
                         params.append('area', beijingAreas.join(','));
                     } else if (trimmedArea.includes('厦门')) {
                         // 厦门相关地区（根据映射表中可能的地区）
-                        const xiamenAreas = ['22', '23']; 
+                        const xiamenAreas = ['22', '23', '24', '25', '26']; 
                         params.append('area', xiamenAreas.join(','));
                     } else if (trimmedArea.includes('深圳')) {
                         // 深圳相关地区
@@ -343,7 +343,7 @@ export class Tools {
             params.append('use_admin', '2'); // 管理者
             params.append('not_apply', '0');
             params.append('page', '1');
-            params.append('pagesize', '100'); // 获取所有数据
+            params.append('pagesize', '500'); // 获取所有数据
             
             // 添加平台筛选条件 (2=安卓, 3=iOS)
             if (platform && platform.trim() !== '') {
