@@ -652,19 +652,19 @@ export class Tools {
                     // 如果是同一天，根据当前时间决定预约哪些时段
                     if (isSameDay) {
                         // 上午时段（0-12点）可以预约上午、下午、晚上
-                        if (currentHour < 9) {
+                        if (currentHour < 12) {
                             form.append(`morning[use_date]`, date);
                             form.append(`morning[return_date]`, date);
                         }
                         
                         // 下午时段（0-18点）可以预约下午、晚上
-                        if (currentHour < 12) {
+                        if (currentHour < 18) {
                             form.append(`afternoon[use_date]`, date);
                             form.append(`afternoon[return_date]`, date);
                         }
                         
                         // 晚上时段（全天）可以预约晚上
-                        if (currentHour < 18) {
+                        if (currentHour < 20) {
                             form.append(`night[use_date]`, date);
                             form.append(`night[return_date]`, date);
                         }
